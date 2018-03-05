@@ -1,0 +1,175 @@
+% No 'submit' option for the problems by themselves.
+%\documentclass{harvardml}
+% Use the 'submit' option when you submit your solutions.
+\documentclass{harvardml}
+
+% Put in your full name and email address.
+\name{Your Name}
+\email{email@fas.harvard.edu}
+
+% You don't need to change these.
+\assignment{Assignment \#2}
+
+\usepackage{url, enumitem}
+\usepackage{amsfonts, amsmath}
+\usepackage{listings}
+\usepackage[margin=0.75in]{geometry}
+
+% Some useful macros.
+\newcommand{\given}{\,|\,}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\var}{\text{var}}
+\newcommand{\cov}{\text{cov}}
+\newcommand{\trans}{\mathsf{T}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bw}{\mathbf{w}}
+\newcommand{\distNorm}{\mathcal{N}}
+\newcommand{\bzero}{\mathbf{0}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bpi}{\boldsymbol{\pi}}
+\newcommand{\ident}{\mathbb{I}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\ep}{\varepsilon}
+\newcommand{\Dir}{\text{Dirichlet}}
+
+\theoremstyle{plain}
+\newtheorem{lemma}{Lemma}
+
+
+\begin{document}
+
+In this assignment, we'll fit both generative and discriminative models to the MNIST dataset of handwritten numbers.
+Each datapoint in the MNIST [\texttt{http://yann.lecun.com/exdb/mnist/}] dataset is a 28x28 black-and-white image of a number in $\{0 \dots 9\}$, and a label indicating which number.\\
+
+MNIST is the 'fruit fly' of machine learning - a simple standard problem useful for comparing the properties of different algorithms.
+Python code for loading and plotting MNIST is attached.\\
+
+You can use whichever programming language you like, and libraries for loading and plotting data.
+You'll need to write your own initialization, fitting, and prediction code.
+You can use automatic differentiation in your code, but must still answer the gradient questions.\\
+
+For this assignment, we'll \emph{binarize} the dataset, converting the grey pixel values to either black or white (0 or 1) with $> 0.5$ being the cutoff.
+When comparing models, we'll need a training and test set.  Use the first 10000 samples for training, and another 10000 for testing. This is all done for you in the starter code. Hint: Also build a dataset of only 100 training samples to use when debugging, to make loading and training faster.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can write your solution here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{problem}[Basic Na\"ive Bayes, 10 points]
+
+In this question, we'll fit a na\"ive Bayes model to the MNIST digits using maximum likelihood.
+Na\"ive Bayes defines the joint probability of the each datapoint $\bx$ and its class label $c$ as follows:
+%
+\begin{align}
+p(\bx, c | \btheta, \pi) = p(c | \pi) p(\bx | c, \theta_c) = p(c | \pi) \prod_{d=1}^{784} p( x_d | c, \theta_{cd})
+\end{align}
+For binary data, we can use the Bernoulli likelihood:
+\begin{align}
+p( x_d | c, \theta_{cd}) = Ber(x_d | \theta_{cd}) = \theta_{cd}^{x_d} ( 1 - \theta_{cd})^{(1 - x_d)}
+\end{align}
+Which is just a way of expressing that $p(x_d = 1 | c, \theta_{cd}) = \theta_{cd}$.
+
+For $p(c | \pi)$, we can just use a categorical distribution:
+\begin{align}
+p(c | \pi) = Cat(c|\pi) = \pi_c
+\end{align}
+Note that we need $\sum_{i=0}^9 \pi_{i} = 1$.
+
+\begin{enumerate}[label=(\alph*)]
+\item Derive the \emph{maximum likelihood estimate} (MLE) for the class-conditional pixel means $\btheta$. Hint: We saw in lecture that MLE can be thought of as `counts' for the data, so what should $\hat \theta_{cd}$ be counting?
+\item Derive the \emph{maximum a posteriori} (MAP) estimate for the class-conditional pixel means $\btheta$, using a Beta(2, 2) prior on each $\theta$.  Hint: it has a simple final form, and you can ignore the Beta normalizing constant.
+\item Fit $\btheta$ to the training set using the MAP estimator.  Plot $\btheta$ as 10 separate greyscale images, one for each class.
+\item Derive the predictive log-likelihood $\log p(c | \bx, \btheta, \pi)$ for a single training image.
+\item Given parameters fit to the training set, and $\pi_c = \frac{1}{10}$, report both the average predictive log-likelihood per datapoint,$\frac{1}{N}\Sigma_{i=1}^N \log p(x_i ,c_i | \theta,\pi)$ and the predictive accuracy on both the training and test set.  The predictive accuracy is defined as the fraction of examples where the true class $t = \operatorname{argmax}_c p(c | \bx, \theta, \pi)$.
+\end{enumerate}
+The takeaway of this question is that we can automatically derive a learning algorithm just by first defining a joint probability!
+\end{problem}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can write your solution here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\begin{problem}[Advanced Na\"ive Bayes, 10 points]
+
+One of the advantages of generative models is that they can handle missing data, or be used to answer different sorts of questions about the model.
+
+\begin{enumerate}[label=(\alph*)]
+\item True or false: Given our model's assumptions, any two pixels $x_i$ and $x_j$ where $i \neq j$ are independent given $c$.
+\item True or false: Given our model's assumptions, any two pixels $x_i$ and $x_j$ where $i \neq j$ are independent when marginalizing over $c$.
+\item Using the parameters fit in question 1, produce random image samples from the model.  That is, randomly sample and plot 10 binary images from the marginal distribution $p(\bx| \btheta, \bpi)$.  Hint: Use ancestral sampling.
+\item Derive $p(\bx_{bottom}|\bx_{top}, \btheta, \pi)$, the joint distribution over the bottom half of an image given the top half, conditioned on your fit parameters.%  Hint: the relative class probabilities $p(c|\bx_{top}, \btheta, \bpi)$ will act as an information bottleneck.
+\item Derive $p(\bx_{i \in bottom}|\bx_{top}, \btheta, \bpi)$, the marginal distribution of a single pixel in the bottom half of an image given the top half, conditioned on your fit parameters.
+\item For 20 images from the training set, plot the top half the image concatenated with the marginal distribution over each pixel in the bottom half.
+\end{enumerate}
+\end{problem}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can write your solution here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\begin{problem}[Logistic Regression, 10 points]
+
+Now, we'll fit a simple predictive model using gradient descent.  Our model will be multiclass logistic regression:
+\begin{align}
+p(c | \bx, \bw) = \frac{\exp(\bw_c^T \bx)}{\sum_{c' = 0}^9 \exp(\bw_{c'}^T \bx)}
+\end{align}
+You can ignore biases for this question.
+\begin{enumerate}[label=(\alph*)]
+\item How many parameters does this model have?
+\item Since class probabilities must sum to one, this imposes constraints on the predictions of our model.  What is the smallest number of parameters we could use to write an equally expressive model with a different parameterization?
+\item Derive the gradient of the predictive log-likelihood w.r.t.\ $\bw$: $\nabla_{\bw} \log p(c | \bx, \bw)$
+\item Code up a gradient-based optimizer of your choosing, it can be just vanilla gradient descent, and use it to optimize $\bw$ to maximize the log-likelihood of the training set, and plot the resulting parameters using one image per class.  Since this objective is concave, you can initialize at all zeros.  Using automatic differentiation is permitted, so you can use autograd to get gradients for use by your optimizer, and using minibatches is optional. However, you are not permitted to use optimizers which come built in to packages! Hint: Use \texttt{scipy.logsumexp} or its equivalent to make your code more numerically stable.
+\item Given parameters fit to the training set, report both the average predictive log-likelihood per datapoint, and the predictive accuracy on both the training and test set.  How does it compare to Na\"ive Bayes?
+\end{enumerate}
+\end{problem}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can write your solution here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+\begin{problem}[Unsupervised Learning, 10 points]
+
+Another advantage of generative models is that they can be trained in an unsupervised or semi-supervised manner.  In this question, we'll fit the Na\"ive Bayes model without using labels.  Since we don't observe labels, we now have a \emph{latent variable model}.  The probability of an image under this model is given by the marginal likelihood, integrating over $c$:
+\begin{align}
+p(\bx | \theta, \pi) = \sum_{c=1}^k p(\bx, c | \theta, \pi) = \sum_{c=1}^k p(c | \pi) \prod_{d=1}^{784} p( x_d | c, \theta_{cd}) = \sum_{c=1}^k Cat(c | \pi) \prod_{d=1}^{784} Ber(x_d | \theta_{cd})
+\end{align}
+It turns out that this gives us a mixture model! This model is sometimes called a ``mixture of Bernoullis'', although it would be clearer to say ``mixture of products of Bernoullis''.  Again, this is just the same Na\"ive Bayes model as before, but where we haven't observed the class labels $c$.  In fact, we are free to choose $K$, the number of mixture components.
+\begin{enumerate}[label=(\alph*)]
+\item Given K, how many parameters does this model have?
+\item How many ways can we permute the parameters of the model $\btheta, \bpi$ and get the same marginal likelihood $p(\bx | \btheta, \bpi)$? Hint: switching any two classes won't change the predictions made by the model about $\bx$.
+\item Derive the gradient of the log marginal likelihood with respect to $\theta$: $\nabla_\theta \log p(\bx | \theta, \pi)$
+\item For a fixed $\pi_c = \frac{1}{K}$ and K = 30, fit $\theta$ on the training set using gradient based optimization.  Note: you can't initialize at all zeros -- you need to break symmetry somehow, which is done for you in starter code. Starter code reduces this problem to correctly coding the optimization objective. Plot the learned $\theta$.  How do these cluster means compare to the supervised model?
+\item For 20 images from the training set, plot the top half the image concatenated with the marginal distribution over each pixel in the bottom half.
+Hint: You can re-use the formula for \\ $p(\bx_{i \in bottom}|\bx_{top}, \theta, \pi)$ from before.  How do these compare with the image completions from the supervised model?
+\end{enumerate}
+\end{problem}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can write your solution here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+\end{document}
