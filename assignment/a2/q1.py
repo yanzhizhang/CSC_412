@@ -29,24 +29,44 @@ def compute_means(train_images, train_labels):
     means = []
     for i in range(0, 10):
         i_digits = get_digits_by_label(train_images, train_labels, i)
-        means.append(np.mean(i_digits, axis=0).reshape(28,28))
+        means.append(np.mean(i_digits, axis=0))
 
-    all_concat = np.concatenate(means, 1)
+    save_images(np.array(means), "1_c.jpg")
+    return np.array(means)
 
-    # plt.imshow(means, cmap='gray')
-    plt.imshow(all_concat, cmap='gray')
-    plt.show()
+def avg_log_likelihood(data, labels, theta):
+    '''
+    1/N*sum(logP(c|x, theta, pi))
+    '''
+    pi = 0.1
+    c, d = theta.shape
+    average = 0
+    for i in range(0, len(data)):
+        sum_c = log_bernoulli_prod(data[i], theta, pi)
+        target = sum_c[np.argmax(labels[i])]
 
-def avg_pre_log(train_images, train_labels):
-    np.where(train_images>0.5, 1, 0)
-    means = []
-    for i in range(0, 10):
-        i_digits = get_digits_by_label(train_images, train_labels, i)
-        means.append(np.mean(i_digits, axis=0).reshape(28,28))
+        average += target
+    average /= len(data)
+    return average
 
-
+def log_bernoulli_prod(flat_data, theta, pi):
+    '''
+    return log(p(c|x)) = log(p(c,x)/sum_c(p(c,x))
+    :param flat_data:
+    :param theta:
+    :param pi:
+    :return:
+    '''
+    c, d = theta.shape
+    P_n = np.where(flat_data > 0.5, theta, np.ones((c, d)) - theta)
+    sum_c = np.sum(np.log(P_n), axis=1)
+    sum_c += np.log(pi)
+    P_x = logsumexp(sum_c)
+    sum_c -= P_x
+    return sum_c
 
 
 if __name__ == '__main__':
     N_data, train_images, train_labels, test_images, test_labels = load_mnist()
-    compute_means(train_images, train_labels)
+    means = compute_means(train_images, train_labels)
+    avg_log_likelihood(test_images, test_labels, means)
