@@ -9,75 +9,55 @@ import os
 import gzip
 import struct
 import array
-
 import matplotlib.pyplot as plt
 import matplotlib.image
 from urllib.request import urlretrieve
-
 from data import load_mnist, plot_images, save_images
 
 
-def softmax(x):
-    return x - logsumexp(x, axis = 1)[: , None]
+def softmax(z):
+    z -= np.max(z)
+    sm = (np.exp(z).T / np.sum(np.exp(z),axis=1)).T
+    return sm
 
-# w is a weight matrix of 10 by 784， x is an image of N by 784
-def logistic_predictions(w, x):
-    temp = np.dot(x, w)
-    # print(temp.shape)
-    return softmax(temp)
+def softmax_loss(weights, inputs, labels):
+    num = inputs.shape[0]
+    scores = np.dot(inputs, weights)
+    prob = softmax(scores)
+    loss = (-1/num) * np.sum(labels*np.log(prob))
+    grad = (-1 /num) * np.dot(inputs.T, (labels - prob))
+    return loss, grad
 
-# This is -log likelihood
-def training_loss(w,x,target):
-	preds = logistic_predictions(w, x)
-	# Cross entropy
-	label_probabilities = target * preds
-	return -np.sum(label_probabilities)
-
-def auto_gd(train_images, train_labels):
-    # Define a function that returns gradients of training loss using autograd.
-    training_gradient_fun = grad(training_loss)
-    # Optimize weights using gradient descent.
+def auto_gd(train_images, train_labels, save_image):
     weights = np.zeros((784, 10))
-    for i in range(100):
-        weights -= training_gradient_fun(weights,train_images,train_labels) * 0.3
-    # print("Trained loss:", training_loss(weights,train_images,train_labels))
-    # Plot w
-    w = []
-    for i in range(10):
-        w_i = weights[:, i]
-        w.append(w_i)
-    save_images(np.array(w), "q3_c" + '.jpg')
+    lr = 0.8
+    for i in range (0, 10):
+        loss, grad = softmax_loss(weights, train_images, train_labels)
+        weights -= lr*grad
 
-# def q3e():
-# 	w = pickle.load(open('weights.p', 'rb'))
-# 	train_prediction = logistic_predictions(w, train_images)
-# 	l_train = np.average(np.sum(train_prediction, axis = 1))
-# 	# print(train_prediction[0])
-# 	train_prediction = np.argmax(train_prediction, axis = 1)
-# 	# print(train_prediction[0])
-#
-# 	test_prediction = np.dot(test_images, w)
-# 	l_test = np.average(np.sum(test_prediction, axis = 1))
-# 	test_prediction = np.argmax(test_prediction, axis = 1)
-#
-# 	num_correct = 0
-# 	for i, prediction in enumerate(train_prediction):
-# 		print('Predict: ' + str(prediction) + ' label: ' + str(train_labels[i]))
-# 		if (train_labels[i][prediction] == 1):
-# 			num_correct = num_correct + 1
-# 	train_accuracy = float(num_correct) / len(train_labels)
-#
-# 	num_correct = 0
-# 	for i, prediction in enumerate(test_prediction):
-# 		if (test_labels[i][prediction] == 1):
-# 			num_correct = num_correct + 1
-# 	test_accuracy = float(num_correct) / len(test_labels)
-#
-# 	print(train_accuracy)
-# 	print(test_accuracy)
-# 	print(l_train)
-# 	print(l_test)
+    if save_image:
+        save_images(weights.T, "3_c.jpg")
+    return weights.T
+
+def avg_log_likelihood(data, labels, weights):
+    average = []
+    for i in range(len(data)):
+        denomenator = np.multiply(weights , data[i])
+        nonminator = np.dot(labels[i],denomenator)
+        prob_i = np.divide(nonminator, logsumexp(denomenator))
+        average.append(prob_i)
+    return np.mean(np.array(average))
+
 
 if __name__ == '__main__':
     N_data, train_images, train_labels, test_images, test_labels = load_mnist()
-    auto_gd(train_images, train_labels)
+
+    '''
+    3c
+    '''
+    save_image = True
+    weights = auto_gd(train_images, train_labels, save_image)
+    '''
+    3d
+    '''
+    print(avg_log_likelihood(test_images, test_labels, weights))

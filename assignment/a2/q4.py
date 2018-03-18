@@ -44,8 +44,6 @@ def batch_indices(iter):
 # In particular, notice that we're keeping everything as log, and using logaddexp
 # We never want to take things out of log space for stability
 def bernoulli_log_density(targets, unnormalized_logprobs):
-    # unnormalized_logprobs are in R
-    # Targets must be 0 or 1
     t2 = targets * 2 - 1
     # Now t2 is -1 or 1, which makes the following form nice
     label_probabilities = -np.logaddexp(0, -unnormalized_logprobs*t2)
@@ -57,12 +55,12 @@ def batched_loss(params, iter):
 
 def neglogprob(params, data):
     # Implement this as the solution for 4c!
-    for c in range(K):
-        numerator =
-        sum_inner = 0.0
-        for d in range(D):
-            sum =np.add(np.divide((data[c,d]+params[c,d]) , (params[c,d]*(1-params[c,d]))), sum_inner)
-    return
+    params = sigmoid(params)
+    result = np.exp(np.dot(data, np.log(params).T) + np.dot(1-data, np.log(1-params).T))
+    result = np.mean(result, axis=1)
+    result = np.log(result)
+    result = -np.mean(result)
+    return result
 
 # Get gradient of objective using autograd.
 objective_grad = grad(batched_loss)
@@ -72,51 +70,35 @@ def print_perf(params, iter, gradient):
         save_images(sigmoid(params), 'q4plot.png')
         print(batched_loss(params, iter))
 
-
-def q4d():
-	theta = pickle.load(open('theta2.p', 'rb'))
-	pi = pickle.load(open('pi2.p', 'rb'))
-
-	for i in range(20):
-		print(i)
-		image = train_images[i]
-		top = image[:392]
-		bottom = []
-
-
-		for d in range(392,784):
-			# Calculate p(x = 0| x_top , theta) and p(x = 1| x_top, theta)
-			p_0 = 0
-			p_1 = 0
-
-			for k in range(K):
-				product_1 = theta[k, d]
-				product_0 = (1 - theta[k, d])
-
-				product = 1
-				# This is p(x_t | k, theta)
-				for d_prime in range(0, 392):
-					product = product * math.pow(theta[k, d_prime], top[d_prime]) * math.pow((1 - theta[k, d_prime]), (1 - top[d_prime]))
-
-				p_1 = p_1 + (product_1 * product)
-				p_0 = p_0 + (product_0 * product)
-
-
-			# x_d = 1 if p(x = 1 | x_top, theta) >= p(x = 0 | x_top, theta)
-			print('p_0: ' + str(p_0))
-			print('p_1: ' + str(p_1))
-			x_d = 1 if p_1 >= p_0 else 0
-			bottom.append(x_d)
-
-		img = top.tolist()  + bottom
-		print('=============================')
-		print(img)
-		img = np.asarray(img)
-		print(img.shape)
-		data.save_images(img.reshape((1, 784)), str(i) + 'b.jpg')
+def plot_bottom_half(xs, theta):
+    result = np.zeros(xs.shape)
+    for i in range(xs.shape[0]):
+        x = xs[i]
+        theta_top_temp = theta[:, :int(theta.shape[1]/2)]
+        theta_bottom_temp = theta[:, int(theta.shape[1]/2):]
+        x_top_temp = x[:int(theta.shape[1]/2)]
+        x_bottom_temp = x[int(theta.shape[1]/2):]
+        x_top_temp = np.full(theta_top_temp.shape, x_top_temp)
+        first = theta_top_temp**x_top_temp * (1-theta_top_temp) ** (1-x_top_temp)
+        first = np.prod(first, axis=1)
+        first = np.full(theta_bottom_temp.T.shape, first).T
+        x_bottom_temp = np.full(theta_bottom_temp.shape, x_bottom_temp)
+        second = theta_bottom_temp
+        second = np.sum(first * second, axis=0)
+        first = np.sum(first, axis = 0)
+        result[i, int(theta.shape[1]/2):] = second / first
+        result[i, :int(theta.shape[1]/2)] = x[:int(theta.shape[1]/2)]
+    return result
 
 if __name__ == '__main__':
     N_data, train_images, train_labels, test_images, test_labels = load_mnist()
-    auto_gd(train_images, train_labels)
 
     optimized_params = adam(objective_grad, init_params, step_size=0.2, num_iters=10000, callback=print_perf)
+    optimized_params = sigmoid(optimized_params)
+
+    # save_images(optimized_params, '4_c.jpg')
+
+    indices = np.random.permutation(train_images.shape[0])
+    images = train_images[indices[:20], :]
+    images = plot_bottom_half(images, optimized_params)
+    save_images(images, '4_d.jpg')
