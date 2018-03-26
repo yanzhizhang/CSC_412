@@ -59,8 +59,7 @@ def neglogprob(params, data):
     result = np.exp(np.dot(data, np.log(params).T) + np.dot(1-data, np.log(1-params).T))
     result = np.mean(result, axis=1)
     result = np.log(result)
-    result = -np.mean(result)
-    return result
+    return -np.mean(result)
 
 # Get gradient of objective using autograd.
 objective_grad = grad(batched_loss)
@@ -96,9 +95,8 @@ if __name__ == '__main__':
     optimized_params = adam(objective_grad, init_params, step_size=0.2, num_iters=10000, callback=print_perf)
     optimized_params = sigmoid(optimized_params)
 
-    # save_images(optimized_params, '4_c.jpg')
+    save_images(optimized_params, '4_c.jpg')
 
-    indices = np.random.permutation(train_images.shape[0])
-    images = train_images[indices[:20], :]
-    images = plot_bottom_half(images, optimized_params)
+    picked_images = train_images[np.random.permutation(train_images.shape[0])[:20], :]
+    images = plot_bottom_half(picked_images, optimized_params)
     save_images(images, '4_d.jpg')

@@ -1,0 +1,194 @@
+% No 'submit' option for the problems by themselves.
+%\documentclass{harvardml}
+% Use the 'submit' option when you submit your solutions.
+\documentclass{harvardml}
+\pagenumbering{gobble}
+\usepackage{enumitem}
+
+
+% Put in your full name and email address.
+\name{Your Name}
+\email{email@fas.harvard.edu}
+
+
+
+% You don't need to change these.
+\assignment{Assignment \#3: Small Data}
+
+\usepackage{url, enumitem}
+\usepackage{amsfonts, amsmath}
+\usepackage{listings}
+
+% Some useful macros.
+\newcommand{\given}{\,|\,}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\var}{\text{var}}
+\newcommand{\cov}{\text{cov}}
+\newcommand{\trans}{\mathsf{T}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bc}{\mathbf{c}}
+\newcommand{\bt}{\mathbf{t}}
+\newcommand{\bw}{\mathbf{w}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\distNorm}{\mathcal{N}}
+\newcommand{\bzero}{\mathbf{0}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bpi}{\boldsymbol{\pi}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bsigma}{\boldsymbol{\sigma}}
+\newcommand{\bphi}{\boldsymbol{\phi}}
+\newcommand{\ident}{\mathbb{I}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\ep}{\varepsilon}
+\newcommand{\Dir}{\text{Dirichlet}}
+
+\theoremstyle{plain}
+\newtheorem{lemma}{Lemma}
+
+\begin{document}
+
+In this assignment, we'll look at two approaches to dealing with having small amounts of data.
+You can use automatic differentiation in your code.
+
+\vspace{0.2cm}
+
+\paragraph{Data preparation}  Binarize the MNIST dataset.
+In this assignment, we'll use only \textbf{300 examples} in our training set.
+We'll keep the test set the same size, at 10000 examples.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can write your solution here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{problem}[L2-Regularized Logistic Regression, 10 points]
+
+In this question, we'll attempt to regularize logistic regression to deal with having such a small dataset.  Recall that the likelihood given by this model is:
+%
+\begin{align}
+p(c | \bx, \bw) = \frac{\exp(\bw_c^T \bx)}{\sum_{c' = 0}^9 \exp(\bw_{c'}^T \bx)}
+\end{align}
+
+\begin{enumerate}[label=(\alph*)]
+\item Using your code from assignment 2, fit a maximum likelihood estimate of logistic regression to the 300 training points, and report the training and test-set error.  Also plot the learned parameters as a set of 10 images.
+\item Next, let's define a prior distribution on parameters, so that we can fit a \emph{maximum a posteriori} (MAP) estimate.  Let's consider a spherical Gaussian prior on the parameters:
+\begin{align}
+p(\bw| \sigma^2) = \prod_{c=0}^9 \prod_{c=0}^{784} \N (w_{cd} | 0, \sigma^2)
+\end{align}
+Write down $\log\left( p(\bt | \bX, \bw) p(\bw | \sigma^2) \right)$, the log-likelihood of the entire training set ($\bX, \bt$) of 300 examples, multiplied by the prior on parameters.
+Also write down its gradient.  You do not need to show the derivation.  Hint: It should look like the gradient of the training log-likelihood from assignment 2, but with an extra term added that only depends on $\bw$.
+\item Fit a MAP estimate of the parameters $\bw$ on the training set using gradient ascent.  Try different values of $\sigma^2$ across several orders of magnitude.  For the value of $\sigma^2$ with the highest test-set log-likelihood, plot the optimized $\bw_{MAP}$ as 10 images.  Also print the training and test accuracy, and average predictive log-likelihood:
+\begin{align}
+\frac{1}{N}\sum_{i=1}^N \log p(t_i | \bx_i, \bw)
+\end{align}
+\end{enumerate}
+\end{problem}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can write your solution here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\pagebreak
+\begin{problem}[Bayesian Logistic Regression using Stochastic Variational Inference, 20 points]
+
+In this question, we'll avoid choosing a single set of parameters $\hat \bw$.
+Instead, we'll approximately \emph{integrate over all possible $\bw$}.
+This will avoid over-fitting by making approximately Bayes-optimal predictions, given the assumptions of our model.
+The Bayes-optimal predictions are given by:
+%
+\begin{align}
+p(c | \bx) = \int p(c | \bx, \bw) p(\bw | \bt, \bX) d\bw
+\end{align}
+%
+The posterior over weights is given by:
+%
+\begin{align}
+p(\bw | \bt, \bX) &= \frac{p(\bt | \bX, \bw) p(\bw | \sigma^2)}{\int p(\bt | \bX, \bw) p(\bw | \sigma^2) d\bw}
+                  \propto p(\bt | \bX, \bw) p(\bw | \sigma^2)
+\end{align}
+which is the same quantity whose gradients you derived in question 1.
+If we could sample from the posterior $p(\bw | \bt, \bX)$, we could approximate the Bayes-optimal predictions using simple Monte Carlo:
+%
+\begin{align}
+p(c | \bx_i)  = \int p(c | \bx_i, \bw) p(\bw | \bt, \bX) d\bw
+            \approxeq \frac{1}{S} \sum_{j=1}^S p(c | \bx_i, \bw^{(j)}), \qquad \textnormal{each } \bw^{(j)} \sim p(\bw | \bt, \bX)
+\end{align}
+
+In this question, we'll use stochastic variational inference to approximately sample from $p(\bw | \bt, \bX)$.
+To do this, we'll fit the parameters of an approximate posterior $q(\bw | \bphi)$ to make it as close as possible to the true posterior $p(\bw | \bt, \bX)$.
+We'll use stochastic gradient ascent to fit the variational parameters $\bphi$.
+
+
+\begin{enumerate}[label=(\alph*)]
+\item Using a fully-factorized Gaussian as the variational posterior, the variational parameters $\bphi = (\bmu, \bsigma)$ specify the mean and diagonal variance of the distribution on the weights $\bw$:
+\begin{align}
+q(\bw | \bphi) = \N ( \bw | \bmu, \bsigma^2 I) = \prod_{c=0}^9 \prod_{c=0}^{784} \N (w_{cd} | \mu_{cd}, \sigma_{cd}^2)
+\end{align}
+How many parameters $\bw$ does this model have? How many variational parameters $\bphi$?
+
+\item Code up SVI for this model.
+That is, use stochastic gradient ascent to find locally optimal variational parameters maximizing the evidence lower bound:
+\begin{align}
+\bphi^* = \operatorname{argmax}_{\bphi} \E_{q(\bw|\bphi)} \left[ \log p(\bt | \bX, \bw) p(\bw | \sigma^2) - \log q(\bw | \bphi) \right]
+\end{align}
+using simple Monte Carlo to estimate the expectation.
+
+Following the provided starter code, you need only correctly implement the ELBO estimate and log-probability of parameters given data.
+
+As a sanity check, if you optimize $\E_{q(\bw|\bphi)} \left[\log p(\bt | \bX, \bw) p(\bw | \sigma^2) \right]$, your variational mean parameters $\bmu$ should converge to your MAP estimate of $\bw$ if you use the same $\sigma^2$.%, and the variances should become very small.
+
+\item Use your code to find $\bphi^*$.
+Compute the average predictive accuracy on the test set using simple Monte Carlo using your approximate posterior and 100 samples (S=100):
+\begin{align}
+p(t_i | \bx_i)  = \int p(t_i | \bx_i, \bw) p(\bw | \bt, \bX) d\bw
+            \approxeq \frac{1}{S} \sum_{j=1}^S p(t_i | \bx_i, \bw^{(j)}), \qquad \textnormal{each } \bw^{(j)} \sim q(\bw | \bphi^*)
+\end{align}
+Play with the prior variance $\sigma^2$ to see if you can get a higher test-set accuracy than MAP inference.
+\item Plot, using 10 images for each,
+\begin{enumerate}[label=\roman*)]
+  \item The variational posterior means $\bmu^*$
+  \item The variational posterior standard deviations $\bsigma^*$
+  \item A single sample from the variational posterior $q(\bw | \bphi^*)$
+\end{enumerate}
+\textbf{Briefly} describe what these plots are showing and if they are what you expected.
+
+\item The above plot for a single sample from $q(\bw | \bphi^*)$ will be extremely noisy.
+Consider how our model treats pixels which it never sees `on' across all training examples.
+In particular, starting from $\log p(t|w,x)$ show that if $x_d \in B$, the set of pixels which are always off, then the training labels do not effect the optimal variational parameters for those pixels.
+
+\item In the starter code training loop there commented call to \textbf{plot\_posterior\_contours}.
+This plots the 2D isocontours of the {\color{blue}true posterior (blue)} and {\color{red} variational posterior (red)} for single dimension of K (contourK) and for weights corresponding to two pixels (px1, px2).
+Uncomment this function and comment on the following:
+\begin{enumerate}[label=\roman*)]
+  \item Does the true posterior change during training? Does the variational posterior?
+  \item How does the standard deviation of the prior affect the true posterior (try $\sigma = [1.0,10.,100.]$)
+  \item The default px2 is on the image boundary and unlikely to be on across all training data, how is this demonstrated in the true posterior?
+  \item Choose another pixel for px2 that is likely to be on in the training data, how does this change the true posterior surface?
+  \item Our Gaussian approximate posterior is unimodal.
+  If we were to use an improper flat prior $p(w)=c$, could the true posterior in this model ever have more than one mode?
+\end{enumerate}
+
+
+
+
+\end{enumerate}
+\end{problem}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can write your solution here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\end{document}
