@@ -22,7 +22,8 @@ N_data, train_images, train_labels, test_images, test_labels = load_mnist()
 train_images = np.round(train_images[0:N])
 train_labels = train_labels[0:N]
 test_images = np.round(test_images[0:10000])
-test_labels = np.round(test_images[0:10000])
+# test_labels = np.round(test_images[0:10000]) a typo
+test_labels = test_images[0:10000]
 
 K = 10
 prior_std = 10.0
