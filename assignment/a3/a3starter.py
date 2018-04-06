@@ -1,7 +1,7 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from future.standard_library import install_aliases
-install_aliases()
+# from __future__ import absolute_import
+# from __future__ import print_function
+# from future.standard_library import install_aliases
+# install_aliases()
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
