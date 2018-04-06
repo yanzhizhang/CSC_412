@@ -16,21 +16,26 @@ from data import load_mnist, plot_images, save_images
 
 
 def softmax(z):
-    return (np.exp(np.max(z)).T / np.sum(np.exp(np.max(z)),axis=1)).T
+    z -= np.max(z)
+    return (np.exp(z).T / np.sum(np.exp(z), axis=1)).T
 
-def softmax_grad(weights, data, labels):
-    scores = np.dot(data, weights)
+def softmax_grad(weights, train_images, train_labels):
+    scores = np.dot(train_images, weights)
     prob = softmax(scores)
-    grad = (-1 /data.shape[0]) * np.dot(data.T, (labels - prob))
-    return loss, grad
+    grad = (-1 /train_images.shape[0]) * np.dot(train_images.T, (train_labels - prob))
+    prior = 1/10
+    grad += weights*prior
+    return grad
 
 def auto_gd(train_images, train_labels, save_image):
     weights = np.zeros((784, 10))
-    lr = 0.8
+    lr = 0.7
     for i in range (0, 100):
         weights -= lr*softmax_grad(weights, train_images, train_labels)
+
     if save_image:
-        save_images(weights.T, "3_c.jpg")
+        save_images(weights.T, "1_c.jpg")
+    print(weights.shape)
     return weights.T
 
 def avg_log_likelihood(data, labels, weights):
@@ -51,9 +56,9 @@ def prediction_accuracy(data, labels, theta):
         denomenator = []
         for j in weights:
             denomenator.append(np.dot(j,data[i]))
-        pred = np.argmax(denomenator)
+        prediction = np.argmax(denomenator)
         target = np.argmax(labels[i])
-        if pred == target:
+        if prediction == target:
             accuracy += 1
     return np.divide(accuracy,len(data))
 
@@ -61,17 +66,15 @@ def prediction_accuracy(data, labels, theta):
 if __name__ == '__main__':
     N_data, train_images, train_labels, test_images, test_labels = load_mnist()
 
-    '''
-    3c
-    '''
+    train_images = train_images[0:300]
+    train_labels = train_labels[0:300]
+
     save_image = True
     weights = auto_gd(train_images, train_labels, save_image)
-    '''
-    3d
-    '''
+
     print("training")
     print(avg_log_likelihood(train_images, train_labels, weights))
-    print("training")
+    print("testing")
     print(avg_log_likelihood(test_images, test_labels, weights))
     print("training")
     print(prediction_accuracy(train_images, train_labels, weights))

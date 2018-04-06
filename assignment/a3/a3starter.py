@@ -23,7 +23,7 @@ train_images = np.round(train_images[0:N])
 train_labels = train_labels[0:N]
 test_images = np.round(test_images[0:10000])
 # test_labels = np.round(test_images[0:10000]) a typo
-test_labels = test_images[0:10000]
+test_labels = test_labels[0:10000]
 
 K = 10
 prior_std = 10.0
@@ -64,14 +64,15 @@ def elbo_estimate(var_params, logprob, num_samples, rs):
     """Provides a stochastic estimate of the variational lower bound.
     var_params is (mean, log_std) of a Gaussian."""
     mean, log_std = var_params
-    samples = #todo
-    log_ps = #todo
-    log_qs = #todo
-    return  #todo # E_q(z|x)[log p(x,z) - log q(z|x)]
+    samples = sample_diag_gaussian(mean, log_std, num_samples, rs)
+    # print(np.mean(mean-samples))
+    log_ps = logprob(samples)
+    log_qs = diag_gaussian_log_density(samples, mean, log_std)
+    return -np.mean(log_ps - log_qs)
 
 def logprob_given_data(params):
-    data_logprob = #todo
-    prior_logprob = #todo
+    data_logprob = logistic_logprob(params, train_images, train_labels)
+    prior_logprob = np.sum(params**2,axis=(-1,-2))/(2*prior_std**2) - params.shape[0]*3528 * np.log(2 * np.pi * prior_std**2)
     return data_logprob + prior_logprob
 
 def objective(var_params, iter):
