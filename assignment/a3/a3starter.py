@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 # Load MNIST and Set Up Data
 N = 200
 D = 784
-S = 1
+S = 10
 N_data, train_images, train_labels, test_images, test_labels = load_mnist()
 train_images = np.round(train_images[0:N])
 train_labels = train_labels[0:N]
@@ -138,7 +138,7 @@ def print_perf(var_params, iter, gradient):
         save_images(sample[0, :, :], 'a3plotsample.png')
 
         ## uncomment for Question 2f)
-        plot_posterior_contours(mean_params,logstd_params)
+        # plot_posterior_contours(mean_params,logstd_params)
 
         print(iter)
         print(objective(var_params,iter))
