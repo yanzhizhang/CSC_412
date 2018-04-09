@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 # Load MNIST and Set Up Data
 N = 200
 D = 784
-S = 10
+S = 100
 N_data, train_images, train_labels, test_images, test_labels = load_mnist()
 train_images = np.round(train_images[0:N])
 train_labels = train_labels[0:N]
@@ -27,7 +27,7 @@ test_images = np.round(test_images[0:10000])
 test_labels = test_labels[0:10000]
 
 K = 10
-prior_std = 100.
+prior_std = 10.
 
 # Choose two pixels and plot the K specific weights against eachother
 contourK = 2
@@ -117,7 +117,7 @@ def plot_posterior_contours(mean_params,logstd_params):
     plot_isocontours(ax, variational_contour, cmap='Reds')
     plt.draw()
     plt.savefig('a3contour.png')
-    plt.pause(10)
+    # plt.pause(10)
 
 # Set up figure.
 fig = plt.figure(figsize=(8,8), facecolor='white')
@@ -147,4 +147,4 @@ def print_perf(var_params, iter, gradient):
 
 # The optimizers provided by autograd can optimize lists, tuples, or dicts of parameters.
 # You may use these optimizers for Q4, but implement your own gradient descent optimizer for Q3!
-optimized_params = adam(objective_grad, init_params, step_size=0.05, num_iters=300, callback=print_perf)
+optimized_params = adam(objective_grad, init_params, step_size=0.05, num_iters=500, callback=print_perf)

@@ -15,7 +15,7 @@ from urllib.request import urlretrieve
 from data import load_mnist, plot_images, save_images
 import scipy.misc
 
-SIGMA = 0.4
+SIGMA = 10
 lr = 1e-3
 ITERATION = 100
 
@@ -26,7 +26,6 @@ def training_loop(train_images, train_labels, save_image):
         prob=np.matmul(train_images,weights)
         prob_sum = np.array([scipy.misc.logsumexp(prob,axis=1)]).T
         softmax_w = -np.exp(prob-prob_sum)
-
         grad = np.matmul(softmax_w.T,train_images).T + np.matmul(train_images.T,train_labels)
         grad -= np.divide(weights, np.power(SIGMA,2))
         weights+=lr*grad
@@ -35,10 +34,12 @@ def training_loop(train_images, train_labels, save_image):
         save_images(weights.T, "1_c.jpg")
     return weights.T
 
-def avg_neg_log_likelihood(data, labels, weights):
-    prob = np.matmul(data,weights.T)
-    prob_sum = np.sum(np.matmul(labels,weights),axis=1)
-    return (np.sum(prob_sum-scipy.misc.logsumexp(prob,axis=1))/N_data)
+def avg_log_likelihood(data, labels, weights):
+    bot = np.matmul(data,weights.T)
+    top = np.multiply(bot, labels)
+    top = np.sum(np.exp(top), axis =1 )
+    bot = np.sum(np.exp(bot), axis =1 )
+    return np.mean(np.log(np.divide(top, bot)))
 
 def prediction_accuracy(data, labels, weights):
     prob=np.matmul(data,weights.T)
@@ -56,7 +57,7 @@ if __name__ == '__main__':
 
     weights = training_loop(train_images, train_labels, save_image)
 
-    print("Training set's average predictive log-likelihood per data point: %f" % avg_neg_log_likelihood(train_images, train_labels, weights))
-    print("Test set's average predictive log-likelihood per data point: %f" %  avg_neg_log_likelihood(test_images, test_labels, weights))
+    print("Training set's average predictive log-likelihood per data point: %f" % avg_log_likelihood(train_images, train_labels, weights))
+    print("Test set's average predictive log-likelihood per data point: %f" %  avg_log_likelihood(test_images, test_labels, weights))
     print("Training set's prediction accuracy: %f" % prediction_accuracy(train_images, train_labels, weights))
     print("Test set's prediction accuracy: %f" % prediction_accuracy(test_images, test_labels, weights))
