@@ -32,8 +32,8 @@ prior_std = 10.
 # Choose two pixels and plot the K specific weights against eachother
 contourK = 2
 px1 = 392 # Middle Pixel
-px2 = px1 + 28*5 +1 # Middle Pixel + 5 rows down
-# px2 = px1+14 # Middle left-most edge
+# px2 = px1 + 28*5 +1 # Middle Pixel + 5 rows down
+px2 = px1+14 # Middle left-most edge
 
 # Random initialization, with set seed for easier debugging
 # Try changing the weighting of the initial randomization, default 0.01
@@ -117,7 +117,7 @@ def plot_posterior_contours(mean_params,logstd_params):
     plot_isocontours(ax, variational_contour, cmap='Reds')
     plt.draw()
     plt.savefig('a3contour.png')
-    # plt.pause(10)
+    plt.pause(10)
 
 # Set up figure.
 fig = plt.figure(figsize=(8,8), facecolor='white')
@@ -138,7 +138,7 @@ def print_perf(var_params, iter, gradient):
         save_images(sample[0, :, :], 'a3plotsample.png')
 
         ## uncomment for Question 2f)
-        # plot_posterior_contours(mean_params,logstd_params)
+        plot_posterior_contours(mean_params,logstd_params)
 
         print(iter)
         print(objective(var_params,iter))
